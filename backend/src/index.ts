@@ -19,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 导入路由
 import usageRoutes from './routes/usage';
+import configRoutes from './routes/config';
 
 // 路由
 app.get('/health', (req, res) => {
@@ -27,6 +28,7 @@ app.get('/health', (req, res) => {
 
 // API路由
 app.use('/api/usage', usageRoutes);
+app.use('/api/config', configRoutes);
 
 // 错误处理中间件
 app.use(errorHandler);

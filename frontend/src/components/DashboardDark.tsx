@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import RealTimeTable from './RealTimeTable';
+import ConfigSwitcher from './ConfigSwitcher';
+import RestartGuide from './RestartGuide';
+import AddConfigModal from './AddConfigModal';
 
 const DashboardDark: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [showRestartGuide, setShowRestartGuide] = useState(false);
+  const [showAddConfigModal, setShowAddConfigModal] = useState(false);
+  const [switchResult, setSwitchResult] = useState<any>(null);
 
   useEffect(() => {
-    const fetchData = async (retryCount = 0) => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-
-        // 设置20秒超时，给ccusage更充足的时间
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        console.log(`开始加载数据 (日期: ${selectedDate || '今天'})`);
 
         // 构建API URL，包含日期参数
         const apiUrl = selectedDate
           ? `http://localhost:3001/api/usage/dashboard?date=${encodeURIComponent(selectedDate)}`
           : 'http://localhost:3001/api/usage/dashboard';
 
-        const response = await fetch(apiUrl, {
-          signal: controller.signal
-        });
+        console.log('请求URL:', apiUrl);
 
-        clearTimeout(timeoutId);
+        const response = await fetch(apiUrl);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -35,30 +36,22 @@ const DashboardDark: React.FC = () => {
         console.log('API Response:', result);
 
         if (result.success) {
+          console.log('数据加载成功，设置data:', result.data);
           setData(result.data);
         } else {
+          console.error('API返回失败:', result.message);
           setError(result.message || '获取数据失败');
         }
       } catch (err) {
         console.error('获取数据失败:', err);
         console.error('错误类型:', err instanceof Error ? err.name : typeof err);
         console.error('错误消息:', err instanceof Error ? err.message : String(err));
-        console.error('是否为AbortError:', err instanceof Error && err.name === 'AbortError');
-        console.error('重试次数:', retryCount);
-
-        // 如果是超时错误且重试次数少于2次，则重试
-        if (err instanceof Error && err.name === 'AbortError' && retryCount < 2) {
-          console.log('请求超时，正在重试...');
-          setTimeout(() => fetchData(retryCount + 1), 2000); // 等待2秒后重试
-          return;
-        }
 
         // 不再使用模拟数据作为fallback，直接显示错误
         setError(`获取数据失败: ${err instanceof Error ? err.message : '未知错误'}`);
       } finally {
-        if (retryCount === 0) { // 只有在非重试情况下才设置loading为false
-          setLoading(false);
-        }
+        console.log('finally: 设置loading为false');
+        setLoading(false);
       }
     };
 
@@ -71,6 +64,21 @@ const DashboardDark: React.FC = () => {
 
   const formatCost = (cost: number) => {
     return `$${cost.toFixed(4)}`;
+  };
+
+  // 处理配置切换
+  const handleConfigChange = (config: any, switchResult: any) => {
+    console.log('配置已切换:', config, switchResult);
+    setSwitchResult(switchResult);
+  };
+
+  // 处理需要重启
+  const handleRestartNeeded = (switchResult: any) => {
+    console.log('需要重启:', switchResult);
+    setSwitchResult(switchResult);
+    setTimeout(() => {
+      setShowRestartGuide(true);
+    }, 500);
   };
 
   const StatCard: React.FC<{
@@ -180,6 +188,9 @@ const DashboardDark: React.FC = () => {
           }} />
           <h2 style={{ fontSize: '24px', marginBottom: '10px' }}>加载中...</h2>
           <p style={{ color: '#94a3b8' }}>正在从ccusage获取数据</p>
+          <p style={{ color: '#64748b', marginTop: '20px', fontSize: '12px' }}>
+            如果长时间没有响应，请按 F12 打开开发者工具，查看 Console 标签页的错误信息
+          </p>
         </div>
         <style>{`
           @keyframes spin {
@@ -279,13 +290,13 @@ const DashboardDark: React.FC = () => {
       <div style={{ position: 'relative', zIndex: 1 }}>
         {/* 标题 */}
         <div style={{
+          marginBottom: '40px',
           textAlign: 'center',
-          marginBottom: '50px'
         }}>
           <h1 style={{
             fontSize: '48px',
             fontWeight: 'bold',
-            marginBottom: '15px',
+            margin: '0 0 15px 0',
             background: 'linear-gradient(135deg, #3b82f6, #10b981, #8b5cf6)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -297,10 +308,59 @@ const DashboardDark: React.FC = () => {
             color: '#64748b',
             fontSize: '16px',
             letterSpacing: '2px',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            marginBottom: '30px'
           }}>
             Real-time Usage Monitoring System
           </div>
+
+          {/* AI供应商切换 - 居中显示 */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: '20px',
+            gap: '10px'
+          }}>
+            <ConfigSwitcher
+              onConfigChange={handleConfigChange}
+              onRestartNeeded={handleRestartNeeded}
+            />
+            <button
+              onClick={() => setShowAddConfigModal(true)}
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
+              }}
+            >
+              ➕ 新增供应商
+            </button>
+          </div>
+
+          <AddConfigModal
+            isOpen={showAddConfigModal}
+            onClose={() => setShowAddConfigModal(false)}
+            onSuccess={() => {
+              // 配置创建成功后的回调
+              console.log('配置创建成功');
+            }}
+          />
         </div>
 
         {/* 用量统计 */}
@@ -373,35 +433,35 @@ const DashboardDark: React.FC = () => {
           }}>
             <StatCard
               title="输入 Tokens"
-              value={formatNumber(data.today_usage?.total_input_tokens || 0)}
+              value={formatNumber(data?.today_usage?.total_input_tokens || 0)}
               subtitle="Input Tokens Today"
               icon="📥"
               color="#3b82f6"
             />
             <StatCard
               title="输出 Tokens"
-              value={formatNumber(data.today_usage?.total_output_tokens || 0)}
+              value={formatNumber(data?.today_usage?.total_output_tokens || 0)}
               subtitle="Output Tokens Today"
               icon="📤"
               color="#10b981"
             />
             <StatCard
               title="Total Tokens"
-              value={formatNumber(data.today_usage?.total_tokens || (data.today_usage?.total_input_tokens || 0) + (data.today_usage?.total_output_tokens || 0))}
+              value={formatNumber(data?.today_usage?.total_tokens || (data?.today_usage?.total_input_tokens || 0) + (data?.today_usage?.total_output_tokens || 0))}
               subtitle="Total Tokens Today"
               icon="🔢"
               color="#ec4899"
             />
             <StatCard
               title="会话次数"
-              value={data.today_usage?.session_count || 0}
+              value={data?.today_usage?.session_count || 0}
               subtitle="Sessions Today"
               icon="💬"
               color="#8b5cf6"
             />
             <StatCard
               title="总成本"
-              value={formatCost(data.today_usage?.total_cost || 0)}
+              value={formatCost(data?.today_usage?.total_cost || 0)}
               subtitle="Total Cost Today"
               icon="💰"
               color="#f59e0b"
@@ -429,25 +489,25 @@ const DashboardDark: React.FC = () => {
           }}>
             <StatCard
               title="周输入 Tokens"
-              value={formatNumber(data.weekly_usage?.total_input_tokens || 0)}
+              value={formatNumber(data?.weekly_usage?.total_input_tokens || 0)}
               subtitle="Weekly Input"
               icon="📊"
               color="#06b6d4"
             />
             <StatCard
               title="周输出 Tokens"
-              value={formatNumber(data.weekly_usage?.total_output_tokens || 0)}
+              value={formatNumber(data?.weekly_usage?.total_output_tokens || 0)}
               subtitle="Weekly Output"
               icon="📋"
               color="#84cc16"
             />
             <StatCard
               title="周趋势"
-              value={`${data.weekly_usage?.weekly_trend?.toFixed(1) || '0'}%`}
+              value={`${data?.weekly_usage?.weekly_trend?.toFixed(1) || '0'}%`}
               subtitle="Weekly Trend"
               icon="📈"
               color="#f59e0b"
-              trend={data.weekly_usage?.weekly_trend}
+              trend={data?.weekly_usage?.weekly_trend}
             />
           </div>
         </div>
@@ -466,14 +526,14 @@ const DashboardDark: React.FC = () => {
             实时使用记录
           </h2>
           <RealTimeTable
-            records={data.real_time_usage || []}
+            records={data?.real_time_usage || []}
             formatNumber={formatNumber}
             formatCost={formatCost}
           />
         </div>
 
         {/* 热门项目 */}
-        {data.top_projects && data.top_projects.length > 0 && (
+        {data?.top_projects && data.top_projects.length > 0 && (
           <div style={{ marginBottom: '50px' }}>
             <h2 style={{
               fontSize: '24px',
@@ -564,6 +624,14 @@ const DashboardDark: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* 重启引导 */}
+        {showRestartGuide && (
+          <RestartGuide
+            switchResult={switchResult}
+            onClose={() => setShowRestartGuide(false)}
+          />
+        )}
       </div>
     </div>
   );
