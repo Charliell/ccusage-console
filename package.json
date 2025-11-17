@@ -1,0 +1,24 @@
+{
+  "name": "ccusage-console",
+  "version": "1.0.0",
+  "description": "基于 ccusage 的 Claude Code 用量监控系统",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "cd frontend && npm run build",
+    "typecheck": "cd frontend && npm run typecheck && cd ../backend && npm run typecheck"
+  },
+  "keywords": [
+    "claude-code",
+    "usage-monitoring",
+    "dashboard",
+    "ccusage"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

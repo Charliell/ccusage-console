@@ -320,37 +320,12 @@ const DashboardDark: React.FC = () => {
             justifyContent: 'center',
             alignItems: 'center',
             marginBottom: '20px',
-            gap: '10px'
           }}>
             <ConfigSwitcher
               onConfigChange={handleConfigChange}
               onRestartNeeded={handleRestartNeeded}
+              onAddConfig={() => setShowAddConfigModal(true)}
             />
-            <button
-              onClick={() => setShowAddConfigModal(true)}
-              style={{
-                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '12px 20px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
-              }}
-            >
-              ➕ 新增供应商
-            </button>
           </div>
 
           <AddConfigModal

@@ -20,9 +20,10 @@ interface SwitchResult {
 interface ConfigSwitcherProps {
   onConfigChange?: (config: ConfigInfo, switchResult: SwitchResult) => void;
   onRestartNeeded?: (switchResult: SwitchResult) => void;
+  onAddConfig?: () => void;
 }
 
-const ConfigSwitcher: React.FC<ConfigSwitcherProps> = ({ onConfigChange, onRestartNeeded }) => {
+const ConfigSwitcher: React.FC<ConfigSwitcherProps> = ({ onConfigChange, onRestartNeeded, onAddConfig }) => {
   const [configs, setConfigs] = useState<ConfigInfo[]>([]);
   const [currentConfig, setCurrentConfig] = useState<ConfigInfo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -446,6 +447,51 @@ const ConfigSwitcher: React.FC<ConfigSwitcherProps> = ({ onConfigChange, onResta
               )}
             </div>
           ))}
+
+          {/* 添加新供应商按钮 */}
+          {!loading && onAddConfig && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddConfig();
+                setIsOpen(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08))',
+                border: '1px dashed rgba(139, 92, 246, 0.3)',
+                borderRadius: '0',
+                cursor: 'pointer',
+                color: '#a78bfa',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(139, 92, 246, 0.15))';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.color = '#c4b5fd';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.08))';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.color = '#a78bfa';
+              }}
+            >
+              <span style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+              }}>+</span>
+              添加AI供应商
+            </button>
+          )}
         </div>
       )}
 
